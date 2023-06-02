@@ -26,6 +26,7 @@ func main() {
 	}
 
 	switch fmt.Sprint(input["Operation"]) {
+
 	case "Discovery":
 		discoveryResponse, err := linux.Discovery(input["credentialProfile"].(map[string]any), input["discoveryProfile"].(map[string]any))
 
@@ -40,6 +41,7 @@ func main() {
 		}
 
 		fmt.Println(string(response))
+
 	case "Collect":
 		//response :=
 		collectResponse, err := linux.Collect(input["credentialProfile"].(map[string]any), input["discoveryProfile"].(map[string]any), input["matrices"].([]any))

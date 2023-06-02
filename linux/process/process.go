@@ -3,14 +3,18 @@ package process
 import (
 	"MotadataPlugin/linux/util"
 	"errors"
+	"fmt"
 	"golang.org/x/crypto/ssh"
 	"strings"
 )
 
-func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err error) {
+func GetStat(connection *ssh.Client) (response map[string]interface{}, err error) {
+
+	response = make(map[string]interface{})
+
 	defer func() {
 		if e := recover(); e != nil {
-			err = errors.New(e.(string))
+			err = errors.New(fmt.Sprintf("%v", e))
 		}
 	}()
 
@@ -27,13 +31,42 @@ func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err err
 		return
 	}
 
-	processSplit := strings.Split(strings.TrimSpace(strings.ReplaceAll(string(processStat), "\n", " ")), " ")
-
-	statistics = make(map[string]interface{})
-
 	var processes []map[string]interface{}
 
+	//fmt.Println("len: ", string(processStat))
+
+	processSplit := strings.Split(strings.TrimSpace(string(processStat)), "\n")
+
 	for index := 0; index < len(processSplit); index++ {
+
+		process := strings.Split(string(processSplit[index]), " ")
+
+		//fmt.Println(strings.TrimSpace(string(processStat)))
+
+		//processSplit := strings.Split(strings.TrimSpace(strings.ReplaceAll(string(processStat[index]), "\n", " ")), " ")
+
+		processInfo := make(map[string]interface{})
+
+		//fmt.Println(string(processStat[index]))
+		//
+		//fmt.Println(strings.TrimSpace(strings.ReplaceAll(string(processStat[index]), "\n", "")))
+
+		processInfo[util.SystemProcessPid] = process[0]
+		index++
+		processInfo[util.SystemProcessCPU] = process[1]
+		index++
+		processInfo[util.SystemProcessMemory] = process[2]
+		index++
+		processInfo[util.SystemProcessUser] = process[3]
+		index++
+		processInfo[util.SystemProcessCommand] = process[4]
+
+		processes = append(processes, processInfo)
+	}
+
+	//processSplit := strings.Split(strings.TrimSpace(strings.ReplaceAll(string(processStat), "\n", " ")), " ")
+
+	/*for index := 0; index < len(processSplit); index++ {
 
 		process := make(map[string]interface{})
 
@@ -48,9 +81,9 @@ func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err err
 		process[util.SystemProcessCommand] = processSplit[index]
 
 		processes = append(processes, process)
-	}
+	}*/
 
-	statistics[util.SystemProcess] = processes
+	response[util.SystemProcess] = processes
 
 	return
 }
