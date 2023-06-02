@@ -9,6 +9,12 @@ import (
 
 func main() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Panic: ", err)
+		}
+	}()
+
 	input := make(map[string]any)
 
 	fmt.Println(os.Args[1])
@@ -21,7 +27,6 @@ func main() {
 
 	switch fmt.Sprint(input["Operation"]) {
 	case "Discovery":
-		fmt.Println("We are inside operation")
 		discoveryResponse, err := linux.Discovery(input["credentialProfile"].(map[string]any), input["discoveryProfile"].(map[string]any))
 
 		if err != nil {
@@ -34,13 +39,10 @@ func main() {
 			return
 		}
 
-		fmt.Println("Response: ", string(response))
+		fmt.Println(string(response))
 	case "Collect":
+		//response :=
 		collectResponse, err := linux.Collect(input["credentialProfile"].(map[string]any), input["discoveryProfile"].(map[string]any), input["matrices"].([]any))
-
-		if err != nil {
-			fmt.Println("Error in collect")
-		}
 
 		response, err := json.Marshal(collectResponse)
 
