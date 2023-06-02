@@ -33,23 +33,13 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 	var processes []map[string]interface{}
 
-	//fmt.Println("len: ", string(processStat))
-
 	processSplit := strings.Split(strings.TrimSpace(string(processStat)), "\n")
 
 	for index := 0; index < len(processSplit); index++ {
 
 		process := strings.Split(string(processSplit[index]), " ")
 
-		//fmt.Println(strings.TrimSpace(string(processStat)))
-
-		//processSplit := strings.Split(strings.TrimSpace(strings.ReplaceAll(string(processStat[index]), "\n", " ")), " ")
-
 		processInfo := make(map[string]interface{})
-
-		//fmt.Println(string(processStat[index]))
-		//
-		//fmt.Println(strings.TrimSpace(strings.ReplaceAll(string(processStat[index]), "\n", "")))
 
 		processInfo[util.SystemProcessPid] = process[0]
 		index++

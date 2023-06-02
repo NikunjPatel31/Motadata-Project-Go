@@ -119,12 +119,7 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 		defer func() {
 			if e := recover(); e != nil {
-
 				err = errors.New(fmt.Sprintf("%v", e))
-
-				response[util.Status] = "error"
-
-				response[util.Message] = fmt.Sprintf("%v", e)
 			}
 			wg.Done()
 		}()
@@ -135,33 +130,18 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 			err = e
 
-			response[util.Status] = "error"
-
-			response[util.Message] = fmt.Sprintf("%v", e)
-
 			return
 		}
 
 		defer func() {
 			err = connection.Close()
-
-			if err != nil {
-				response[util.Status] = "error"
-
-				response[util.Message] = fmt.Sprintf("%v", err)
-			}
-
 		}()
 
-		memoryStat, e := memory.GetStat(connection)
+		memoryStat, e := memory.GetStat(connection) // shadow
 
 		if e != nil {
 
 			err = e
-
-			response[util.Status] = "error"
-
-			response[util.Message] = fmt.Sprintf("%v", err)
 
 			return
 		}
@@ -171,8 +151,6 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 			response[key] = value
 
 		}
-
-		response[util.Status] = "ok"
 
 	}()
 
@@ -184,10 +162,6 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 				err = errors.New(fmt.Sprintf("%v", e))
 
-				response[util.Status] = "error"
-
-				response[util.Message] = fmt.Sprint("%v", e)
-
 			}
 			wg.Done()
 		}()
@@ -198,10 +172,6 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 			err = e
 
-			response[util.Status] = "error"
-
-			response[util.Message] = fmt.Sprintf("%v", e)
-
 			return
 		}
 
@@ -209,13 +179,7 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 			e = connection.Close()
 
 			if e != nil {
-
 				err = e
-
-				response[util.Status] = "error"
-
-				response[util.Message] = fmt.Sprintf("%v", e)
-
 			}
 		}()
 
@@ -225,16 +189,10 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 			err = e
 
-			response[util.Status] = "error"
-
-			response[util.Message] = fmt.Sprintf("%v", e)
-
 			return
 		}
 
 		response[util.SystemProcess] = processStat[util.SystemProcess]
-
-		response[util.Status] = "ok"
 
 	}()
 
@@ -246,10 +204,6 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 				err = errors.New(fmt.Sprintf("%v", e))
 
-				response[util.Status] = "error"
-
-				response[util.Message] = fmt.Sprint("%v", e)
-
 			}
 			wg.Done()
 		}()
@@ -260,25 +214,11 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 			err = e
 
-			response[util.Status] = "error"
-
-			response[util.Message] = fmt.Sprintf("%v", e)
-
 			return
 		}
 
 		defer func() {
-
-			e = connection.Close()
-
-			if e != nil {
-
-				err = e
-
-				response[util.Status] = "error"
-
-				response[util.Message] = fmt.Sprintf("%v", e)
-			}
+			err = connection.Close()
 		}()
 
 		cpuStat, e := cpu.GetStat(connection)
@@ -286,10 +226,6 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 		if e != nil {
 
 			err = e
-
-			response[util.Status] = "error"
-
-			response[util.Message] = fmt.Sprintf("%v", e)
 
 			return
 		}
@@ -304,8 +240,6 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 		response[util.SystemCPUPercentage] = cpuStat[util.SystemCPUPercentage]
 
-		response[util.Status] = "ok"
-
 	}()
 
 	// system statistics
@@ -313,13 +247,7 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 		defer func() {
 			if e := recover(); e != nil {
-
 				err = errors.New(fmt.Sprintf("%v", e))
-
-				response[util.Status] = "error"
-
-				response[util.Message] = fmt.Sprint("%v", e)
-
 			}
 			wg.Done()
 		}()
@@ -330,18 +258,11 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 			err = errors.New(fmt.Sprintf("%v", e))
 
-			response[util.Status] = "error"
-
-			response[util.Message] = fmt.Sprintf("%v", e)
-
 			return
 		}
 
 		defer func() {
-			e := connection.Close()
-			if e != nil {
-				err = e
-			}
+			err = connection.Close()
 		}()
 
 		systemStat, e := system.GetStat(connection)
@@ -349,18 +270,12 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 		if e != nil {
 			err = errors.New(fmt.Sprintf("%v", e))
 
-			response[util.Status] = "error"
-
-			response[util.Message] = fmt.Sprintf("%v", e)
-
 			return
 		}
 
 		for key, value := range systemStat {
 			response[key] = value
 		}
-
-		response[util.Status] = "ok"
 
 	}()
 
