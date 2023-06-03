@@ -33,11 +33,11 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 	var processes []map[string]interface{}
 
-	processSplit := strings.Split(strings.TrimSpace(string(processStat)), "\n")
+	processSplit := strings.Split(strings.TrimSpace(string(processStat)), util.NewLineSeparator)
 
 	for index := 0; index < len(processSplit); index++ {
 
-		process := strings.Split(string(processSplit[index]), " ")
+		process := strings.Split(processSplit[index], util.SpaceSeparator)
 
 		processInfo := make(map[string]interface{})
 

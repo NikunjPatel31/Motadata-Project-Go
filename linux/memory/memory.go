@@ -2,12 +2,22 @@ package memory
 
 import (
 	"MotadataPlugin/linux/util"
+	"errors"
+	"fmt"
 	"golang.org/x/crypto/ssh"
 	"strconv"
 	"strings"
 )
 
-func GetStat(connection *ssh.Client) (statistics map[string]any, err error) {
+func GetStat(connection *ssh.Client) (response map[string]interface{}, err error) {
+
+	response = make(map[string]interface{})
+
+	defer func() {
+		if e := recover(); e != nil {
+			err = errors.New(fmt.Sprintf("%v", e))
+		}
+	}()
 
 	session, err := connection.NewSession()
 
@@ -21,7 +31,7 @@ func GetStat(connection *ssh.Client) (statistics map[string]any, err error) {
 		return
 	}
 
-	memorySplit := strings.Split(string(memoryStat), " ")
+	memorySplit := strings.Split(string(memoryStat), util.SpaceSeparator)
 
 	totalMemory, err := strconv.Atoi(memorySplit[0])
 
@@ -29,23 +39,23 @@ func GetStat(connection *ssh.Client) (statistics map[string]any, err error) {
 		return
 	}
 
-	statistics = make(map[string]any)
+	response = make(map[string]any)
 
-	statistics[util.SystemMemoryInstalledBytes] = totalMemory / 8
+	response[util.SystemMemoryInstalledBytes] = totalMemory / 8
 
-	statistics[util.SystemMemoryUsedBytes] = memorySplit[1]
+	response[util.SystemMemoryUsedBytes] = memorySplit[1]
 
-	statistics[util.SystemMemoryUsedPercentage] = memorySplit[2]
+	response[util.SystemMemoryUsedPercentage] = memorySplit[2]
 
-	statistics[util.SystemMemoryFreeBytes] = memorySplit[3]
+	response[util.SystemMemoryFreeBytes] = memorySplit[3]
 
-	statistics[util.SystemMemoryFreePercentage] = memorySplit[4]
+	response[util.SystemMemoryFreePercentage] = memorySplit[4]
 
-	statistics[util.SystemMemoryAvailableBytes] = memorySplit[5]
+	response[util.SystemMemoryAvailableBytes] = memorySplit[5]
 
-	statistics[util.SystemMemorySwapBytes] = strings.TrimSpace(memorySplit[6])
+	response[util.SystemMemorySwapBytes] = strings.TrimSpace(memorySplit[6])
 
-	statistics[util.SystemMemoryTotalBytes] = memorySplit[0]
+	response[util.SystemMemoryTotalBytes] = memorySplit[0]
 
 	return
 }

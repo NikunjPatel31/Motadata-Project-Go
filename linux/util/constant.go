@@ -57,3 +57,7 @@ const SystemContextSwtiches = "system.context.switches"
 const SystemRunningProcesses = "system.running.processes"
 
 const SystemBlockedProcesses = "system.blocked.processes"
+
+const NewLineSeparator = "\n"
+
+const SpaceSeparator = " "

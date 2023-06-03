@@ -3,52 +3,36 @@ package cpu
 import (
 	"MotadataPlugin/linux/util"
 	"errors"
+	"fmt"
 	"golang.org/x/crypto/ssh"
 	"strings"
 )
 
-func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err error) {
+func GetStat(connection *ssh.Client) (response map[string]interface{}, err error) {
 
 	defer func() {
 		if e := recover(); e != nil {
-			err = errors.New(e.(string))
+			err = errors.New(fmt.Sprintf("%v", e))
 		}
 	}()
 
-	statistics = make(map[string]interface{})
-
-	defer func() {
-
-		if e := recover(); e != nil {
-			err = errors.New(e.(string))
-		}
-
-	}()
+	response = make(map[string]interface{})
 
 	session, err := connection.NewSession()
 
 	if err != nil {
-		statistics[util.Status] = "error"
-
-		statistics[util.Message] = err.Error()
-
 		return
 	}
 
 	cpuStat, err := session.Output("nproc --all && mpstat -P ALL | awk 'NR>3 {print $4 \" \" $7 \" \" $5 \" \" $14}'")
 
 	if err != nil {
-
-		statistics[util.Status] = "error"
-
-		statistics[util.Message] = err.Error()
-
 		return
 	}
 
-	cpuSplit := strings.Split(strings.TrimSpace(string(cpuStat)), "\n")
+	cpuSplit := strings.Split(strings.TrimSpace(string(cpuStat)), util.NewLineSeparator)
 
-	statistics[util.SystemCPUCore] = cpuSplit[0]
+	response[util.SystemCPUCore] = cpuSplit[0]
 
 	var CPUs []map[string]string
 
@@ -56,15 +40,15 @@ func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err err
 
 		cpu := make(map[string]string)
 
-		CPUCore := strings.Split(cpuSplit[index], " ")
+		CPUCore := strings.Split(cpuSplit[index], util.SpaceSeparator)
 
 		if CPUCore[0] == "all" {
 
-			statistics[util.SystemCPUPercentage] = CPUCore[1]
+			response[util.SystemCPUPercentage] = CPUCore[1]
 
-			statistics[util.SystemCPUUserPercentage] = CPUCore[2]
+			response[util.SystemCPUUserPercentage] = CPUCore[2]
 
-			statistics[util.SystemCPUIdlePercentage] = CPUCore[3]
+			response[util.SystemCPUIdlePercentage] = CPUCore[3]
 
 		} else {
 
@@ -80,7 +64,7 @@ func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err err
 		}
 	}
 
-	statistics[util.SystemCPU] = CPUs
+	response[util.SystemCPU] = CPUs
 
 	return
 }
