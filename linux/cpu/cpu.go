@@ -1,7 +1,7 @@
 package cpu
 
 import (
-	"MotadataPlugin/linux/util"
+	. "MotadataPlugin/linux/util"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
@@ -9,17 +9,7 @@ import (
 	"strings"
 )
 
-const (
-	cmd = "nproc --all && mpstat -P ALL | awk 'NR>3 {print $4 \" \" $7 \" \" $5 \" \" $14}'"
-
-	SystemCPUPercentage = "system.cpu.percentage"
-
-	SystemCPUCore = "system.cpu.core"
-
-	SystemCPUUserPercentage = "system.cpu.user.percentage"
-
-	SystemCPUIdlePercentage = "system.cpu.idle.percentage"
-)
+const cmd = "nproc --all && mpstat -P ALL | awk 'NR>3 {print $4 \" \" $7 \" \" $5 \" \" $14}'"
 
 func GetStat(connection *ssh.Client) (response map[string]interface{}, err error) {
 
@@ -43,7 +33,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 		return
 	}
 
-	cpuSplit := strings.Split(strings.TrimSpace(string(cpuStat)), util.NewLineSeparator)
+	cpuSplit := strings.Split(strings.TrimSpace(string(cpuStat)), NewLineSeparator)
 
 	response[SystemCPUCore] = cpuSplit[0]
 
@@ -53,7 +43,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 		cpu := make(map[string]interface{})
 
-		CPUCore := strings.Split(cpuSplit[index], util.SpaceSeparator)
+		CPUCore := strings.Split(cpuSplit[index], SpaceSeparator)
 
 		if CPUCore[0] == "all" {
 
@@ -105,7 +95,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 		}
 	}
 
-	response[util.SystemCPU] = CPUs
+	response[SystemCPU] = CPUs
 
 	return
 }

@@ -1,7 +1,7 @@
 package process
 
 import (
-	"MotadataPlugin/linux/util"
+	. "MotadataPlugin/linux/util"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
@@ -34,17 +34,17 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 	var processes []map[string]interface{}
 
-	processSplit := strings.Split(strings.TrimSpace(string(processStat)), util.NewLineSeparator)
+	processSplit := strings.Split(strings.TrimSpace(string(processStat)), NewLineSeparator)
 
 	for index := 0; index < len(processSplit); index++ {
 
-		process := strings.Split(processSplit[index], util.SpaceSeparator)
+		process := strings.Split(processSplit[index], SpaceSeparator)
 
 		processInfo := make(map[string]interface{})
 
 		if pid, err := strconv.Atoi(process[0]); err == nil {
 
-			processInfo[util.SystemProcessPid] = pid
+			processInfo[SystemProcessPid] = pid
 
 		}
 
@@ -52,7 +52,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 		if processCPU, err := strconv.ParseFloat(strings.ReplaceAll(process[1], "%", ""), 64); err == nil {
 
-			processInfo[util.SystemProcessCPU] = processCPU
+			processInfo[SystemProcessCPU] = processCPU
 
 		}
 
@@ -60,22 +60,22 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 		if processMem, err := strconv.ParseFloat(strings.ReplaceAll(process[2], "%", ""), 64); err == nil {
 
-			processInfo[util.SystemProcessMemory] = processMem
+			processInfo[SystemProcessMemory] = processMem
 
 		}
 
 		index++
 
-		processInfo[util.SystemProcessUser] = process[3]
+		processInfo[SystemProcessUser] = process[3]
 
 		index++
 
-		processInfo[util.SystemProcessCommand] = process[4]
+		processInfo[SystemProcessCommand] = process[4]
 
 		processes = append(processes, processInfo)
 	}
 
-	response[util.SystemProcess] = processes
+	response[SystemProcess] = processes
 
 	return
 }

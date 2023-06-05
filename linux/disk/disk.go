@@ -1,7 +1,7 @@
 package disk
 
 import (
-	"MotadataPlugin/linux/util"
+	. "MotadataPlugin/linux/util"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
@@ -47,15 +47,15 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 	var allDisk []map[string]interface{}
 
-	cmdInfo := strings.Split(strings.TrimSpace(string(diskStat)), util.NewLineSeparator)
+	cmdInfo := strings.Split(strings.TrimSpace(string(diskStat)), NewLineSeparator)
 
 	for index := 0; index < len(cmdInfo); index++ {
 
 		disk := make(map[string]interface{})
 
-		diskInfo := strings.Split(cmdInfo[index], util.SpaceSeparator)
+		diskInfo := strings.Split(cmdInfo[index], SpaceSeparator)
 
-		disk[util.SystemDisk] = diskInfo[0]
+		disk[SystemDisk] = diskInfo[0]
 
 		var readBytes float64
 
@@ -90,7 +90,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 		allDisk = append(allDisk, disk)
 	}
 
-	response[util.SystemDisk] = allDisk
+	response[SystemDisk] = allDisk
 
 	return
 

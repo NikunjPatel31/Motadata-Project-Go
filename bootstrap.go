@@ -2,7 +2,7 @@ package main
 
 import (
 	"MotadataPlugin/linux"
-	"MotadataPlugin/linux/util"
+	. "MotadataPlugin/linux/util"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,7 +16,7 @@ func main() {
 
 	defer func() {
 		if err := recover(); err != nil {
-			input[util.Message] = fmt.Sprintf("%v", err)
+			input[Message] = fmt.Sprintf("%v", err)
 		}
 
 		response, _ = json.Marshal(input)
@@ -28,9 +28,9 @@ func main() {
 
 	if err != nil {
 
-		input[util.Input] = os.Args[1]
+		input[Input] = os.Args[1]
 
-		input[util.Message] = fmt.Sprintf("%v", err)
+		input[Message] = fmt.Sprintf("%v", err)
 
 		return
 	}
@@ -42,26 +42,37 @@ func main() {
 
 		if err != nil {
 
-			input[util.Status] = util.Fail
+			errorResponse := make(map[string]interface{})
 
-			input[util.Message] = fmt.Sprintf("%v", err)
+			errorResponse[Status] = Fail
+
+			errorResponse[Message] = fmt.Sprintf("%v", err)
+
+			input[Result] = errorResponse
 
 			return
 		}
 
-		input[util.Result] = discoveryResponse
+		input[Result] = discoveryResponse
 
 	case "Polling":
 		//response :=
-		collectResponse, err := linux.Collect(input["credentialProfile"].(map[string]interface{}), input["discoveryProfile"].(map[string]interface{}), input["matrices"].([]interface{}))
+		collectResponse, err := linux.Collect(input["credentialProfile"].(map[string]interface{}), input["discoveryProfile"].(map[string]interface{}), fmt.Sprintf("%v", input["metrics"]))
 
 		if err != nil {
-			input[util.Message] = fmt.Sprintf("%v", err)
+
+			var errorResult = make(map[string]string)
+
+			errorResult[Message] = fmt.Sprintf("%v", err)
+
+			input[Result] = errorResult
 
 			return
 		}
 
-		input[util.Result] = collectResponse
+		fmt.Println("We are at the end of polling")
+
+		input[Result] = collectResponse
 	}
 }
 

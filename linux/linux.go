@@ -6,11 +6,11 @@ import (
 	"MotadataPlugin/linux/memory"
 	"MotadataPlugin/linux/process"
 	"MotadataPlugin/linux/system"
-	"MotadataPlugin/linux/util"
+	. "MotadataPlugin/linux/util"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
-	"sync"
+	"strings"
 	"time"
 )
 
@@ -21,18 +21,12 @@ func Discovery(credentialProfile map[string]interface{}, discoveryProfile map[st
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprintf("%v", e))
 
-			response[util.Status] = util.Fail
-
-			response[util.Message] = fmt.Sprintf("%v", e)
 		}
 	}()
 
-	connection, err := connect(credentialProfile, discoveryProfile)
+	connection, err := Connect(credentialProfile, discoveryProfile)
 
 	if err != nil {
-		response[util.Status] = util.Fail
-
-		response[util.Message] = fmt.Sprintf("%v", err)
 
 		return
 	}
@@ -44,9 +38,13 @@ func Discovery(credentialProfile map[string]interface{}, discoveryProfile map[st
 
 			err = errors.New(fmt.Sprintf("%v", e))
 
-			response[util.Status] = util.Fail
+			errorResponse := make(map[string]string)
 
-			response[util.Message] = fmt.Sprintf("%v", err)
+			errorResponse[Status] = Fail
+
+			errorResponse[Message] = fmt.Sprintf("%v", e)
+
+			response[Result] = errorResponse
 		}
 	}()
 
@@ -54,34 +52,44 @@ func Discovery(credentialProfile map[string]interface{}, discoveryProfile map[st
 
 	if err != nil {
 
-		response[util.Status] = util.Fail
+		errorResponse := make(map[string]string)
 
-		response[util.Message] = fmt.Sprintf("%v", err)
+		errorResponse[Status] = Fail
+
+		errorResponse[Message] = fmt.Sprintf("%v", err)
+
+		response[Result] = errorResponse
 
 		return
 	}
 
 	command := "hostname"
 
-	_, err = session.Output(command)
+	discoveryOutput, err := session.Output(command)
 
 	if err != nil {
 
-		response[util.Status] = util.Fail
+		errorResponse := make(map[string]string)
 
-		response[util.Message] = fmt.Sprintf("%v", err)
+		errorResponse[Status] = Fail
+
+		errorResponse[Message] = fmt.Sprintf("%v", err)
+
+		response[Result] = errorResponse
 
 		return
 	}
 
-	response[util.Status] = util.Success
+	response[Status] = Success
 
-	response[util.Message] = "Connection established"
+	response[Message] = strings.TrimSpace(string(discoveryOutput))
+
+	//response[Message] = "Connection established"
 
 	return
 }
 
-func Collect(credentialProfile map[string]interface{}, discoveryProfile map[string]interface{}, matrices []interface{}) (response map[string]interface{}, err error) {
+func Collect(credentialProfile map[string]interface{}, discoveryProfile map[string]interface{}, metrics string) (response map[string]interface{}, err error) {
 
 	response = make(map[string]interface{})
 
@@ -91,9 +99,9 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 			//err = e.(error)
 			err = errors.New(fmt.Sprintf("%v", e))
 
-			response[util.Status] = util.Fail
+			response[Status] = Fail
 
-			response[util.Message] = fmt.Sprintf("%v", e)
+			response[Message] = fmt.Sprintf("%v", e)
 		}
 	}()
 
@@ -111,21 +119,62 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 	//var channel = make(chan interface{}, 5)
 
-	var wg sync.WaitGroup
+	switch metrics {
 
-	wg.Add(5)
-
-	// memory statistics
-	go func() {
+	case CPU:
 
 		defer func() {
 			if e := recover(); e != nil {
+
 				err = errors.New(fmt.Sprintf("%v", e))
+
 			}
-			wg.Done()
 		}()
 
-		connection, e := connect(credentialProfile, discoveryProfile)
+		connection, e := Connect(credentialProfile, discoveryProfile)
+
+		if e != nil {
+
+			err = e
+
+			return
+		}
+
+		defer func() {
+			err = connection.Close()
+		}()
+
+		cpuStat, e := cpu.GetStat(connection)
+
+		if e != nil {
+
+			err = e
+
+			return
+		}
+
+		response[SystemCPU] = cpuStat[SystemCPU]
+
+		response[SystemCPUCore] = cpuStat[SystemCPUCore]
+
+		response[SystemCPUIdlePercentage] = cpuStat[SystemCPUIdlePercentage]
+
+		response[SystemCPUUserPercentage] = cpuStat[SystemCPUUserPercentage]
+
+		response[SystemCPUPercentage] = cpuStat[SystemCPUPercentage]
+
+		return
+	case Memory:
+
+		defer func() {
+			if e := recover(); e != nil {
+
+				err = errors.New(fmt.Sprintf("%v", e))
+
+			}
+		}()
+
+		connection, e := Connect(credentialProfile, discoveryProfile)
 
 		if e != nil {
 
@@ -153,10 +202,8 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 		}
 
-	}()
-
-	// process statistics
-	go func() {
+		return
+	case Process:
 
 		defer func() {
 			if e := recover(); e != nil {
@@ -164,10 +211,9 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 				err = errors.New(fmt.Sprintf("%v", e))
 
 			}
-			wg.Done()
 		}()
 
-		connection, e := connect(credentialProfile, discoveryProfile)
+		connection, e := Connect(credentialProfile, discoveryProfile)
 
 		if e != nil {
 
@@ -193,12 +239,10 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 			return
 		}
 
-		response[util.SystemProcess] = processStat[util.SystemProcess]
+		response[SystemProcess] = processStat[SystemProcess]
 
-	}()
-
-	// cpu statistics
-	go func() {
+		return
+	case System:
 
 		defer func() {
 			if e := recover(); e != nil {
@@ -206,54 +250,9 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 				err = errors.New(fmt.Sprintf("%v", e))
 
 			}
-			wg.Done()
 		}()
 
-		connection, e := connect(credentialProfile, discoveryProfile)
-
-		if e != nil {
-
-			err = e
-
-			return
-		}
-
-		defer func() {
-			err = connection.Close()
-		}()
-
-		cpuStat, e := cpu.GetStat(connection)
-
-		if e != nil {
-
-			err = e
-
-			return
-		}
-
-		response[util.SystemCPU] = cpuStat[util.SystemCPU]
-
-		response[util.SystemCPUCore] = cpuStat[util.SystemCPUCore]
-
-		response[util.SystemCPUIdlePercentage] = cpuStat[util.SystemCPUIdlePercentage]
-
-		response[util.SystemCPUUserPercentage] = cpuStat[util.SystemCPUUserPercentage]
-
-		response[util.SystemCPUPercentage] = cpuStat[util.SystemCPUPercentage]
-
-	}()
-
-	// system statistics
-	go func() {
-
-		defer func() {
-			if e := recover(); e != nil {
-				err = errors.New(fmt.Sprintf("%v", e))
-			}
-			wg.Done()
-		}()
-
-		connection, e := connect(credentialProfile, discoveryProfile)
+		connection, e := Connect(credentialProfile, discoveryProfile)
 
 		if e != nil {
 
@@ -278,19 +277,18 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 			response[key] = value
 		}
 
-	}()
-
-	// disk statistics
-	go func() {
+		return
+	case Disk:
 
 		defer func() {
 			if e := recover(); e != nil {
+
 				err = errors.New(fmt.Sprintf("%v", e))
+
 			}
-			wg.Done()
 		}()
 
-		connection, e := connect(credentialProfile, discoveryProfile)
+		connection, e := Connect(credentialProfile, discoveryProfile)
 
 		if e != nil {
 
@@ -312,22 +310,228 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 			return
 		}
 
-		response[util.SystemDisk] = diskStat[util.SystemDisk]
+		response[SystemDisk] = diskStat[SystemDisk]
 
-		/*for key, value := range memoryStat {
+		return
 
-			response[key] = value
+	}
 
-		}*/
+	/*	var wg sync.WaitGroup
 
-	}()
+		wg.Add(5)
 
-	wg.Wait()
+		// memory statistics
+		go func() {
+
+			defer func() {
+				if e := recover(); e != nil {
+					err = errors.New(fmt.Sprintf("%v", e))
+				}
+				wg.Done()
+			}()
+
+			connection, e := Connect(credentialProfile, discoveryProfile)
+
+			if e != nil {
+
+				err = e
+
+				return
+			}
+
+			defer func() {
+				err = connection.Close()
+			}()
+
+			memoryStat, e := memory.GetStat(connection) // shadow
+
+			if e != nil {
+
+				err = e
+
+				return
+			}
+
+			for key, value := range memoryStat {
+
+				response[key] = value
+
+			}
+
+		}()
+
+		// process statistics
+		go func() {
+
+			defer func() {
+				if e := recover(); e != nil {
+
+					err = errors.New(fmt.Sprintf("%v", e))
+
+				}
+				wg.Done()
+			}()
+
+			connection, e := Connect(credentialProfile, discoveryProfile)
+
+			if e != nil {
+
+				err = e
+
+				return
+			}
+
+			defer func() {
+				e = connection.Close()
+
+				if e != nil {
+					err = e
+				}
+			}()
+
+			processStat, e := process.GetStat(connection)
+
+			if e != nil {
+
+				err = e
+
+				return
+			}
+
+			response[SystemProcess] = processStat[SystemProcess]
+
+		}()
+
+		// cpu statistics
+		go func() {
+
+			defer func() {
+				if e := recover(); e != nil {
+
+					err = errors.New(fmt.Sprintf("%v", e))
+
+				}
+				wg.Done()
+			}()
+
+			connection, e := Connect(credentialProfile, discoveryProfile)
+
+			if e != nil {
+
+				err = e
+
+				return
+			}
+
+			defer func() {
+				err = connection.Close()
+			}()
+
+			cpuStat, e := cpu.GetStat(connection)
+
+			if e != nil {
+
+				err = e
+
+				return
+			}
+
+			response[SystemCPU] = cpuStat[SystemCPU]
+
+			response[SystemCPUCore] = cpuStat[SystemCPUCore]
+
+			response[SystemCPUIdlePercentage] = cpuStat[SystemCPUIdlePercentage]
+
+			response[SystemCPUUserPercentage] = cpuStat[SystemCPUUserPercentage]
+
+			response[SystemCPUPercentage] = cpuStat[SystemCPUPercentage]
+
+		}()
+
+		// system statistics
+		go func() {
+
+			defer func() {
+				if e := recover(); e != nil {
+					err = errors.New(fmt.Sprintf("%v", e))
+				}
+				wg.Done()
+			}()
+
+			connection, e := Connect(credentialProfile, discoveryProfile)
+
+			if e != nil {
+
+				err = errors.New(fmt.Sprintf("%v", e))
+
+				return
+			}
+
+			defer func() {
+				err = connection.Close()
+			}()
+
+			systemStat, e := system.GetStat(connection)
+
+			if e != nil {
+				err = errors.New(fmt.Sprintf("%v", e))
+
+				return
+			}
+
+			for key, value := range systemStat {
+				response[key] = value
+			}
+
+		}()
+
+		// disk statistics
+		go func() {
+
+			defer func() {
+				if e := recover(); e != nil {
+					err = errors.New(fmt.Sprintf("%v", e))
+				}
+				wg.Done()
+			}()
+
+			connection, e := Connect(credentialProfile, discoveryProfile)
+
+			if e != nil {
+
+				err = e
+
+				return
+			}
+
+			defer func() {
+				err = connection.Close()
+			}()
+
+			diskStat, e := disk.GetStat(connection) // shadow
+
+			if e != nil {
+
+				err = e
+
+				return
+			}
+
+			response[SystemDisk] = diskStat[SystemDisk]
+
+			/*for key, value := range memoryStat {
+
+				response[key] = value
+
+			}*/
+
+	//}()
+	//wg.Wait()*/
 
 	return
 }
 
-func connect(credentialProfile map[string]interface{}, discoveryProfile map[string]interface{}) (connection *ssh.Client, err error) {
+func Connect(credentialProfile map[string]interface{}, discoveryProfile map[string]interface{}) (connection *ssh.Client, err error) {
 
 	defer func() {
 		if e := recover(); e != nil {
@@ -343,7 +547,7 @@ func connect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 
-		Timeout: time.Second * 4,
+		Timeout: time.Second * 5,
 	}
 
 	ip := fmt.Sprint(discoveryProfile["ip"], ":", discoveryProfile["port"])

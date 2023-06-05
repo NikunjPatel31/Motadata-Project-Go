@@ -73,3 +73,13 @@ const Result = "result"
 const Fail = "fail"
 
 const Success = "success"
+
+const CPU = "cpu"
+
+const Memory = "memory"
+
+const Process = "process"
+
+const System = "system"
+
+const Disk = "disk"
