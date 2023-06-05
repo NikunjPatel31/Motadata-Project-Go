@@ -2,6 +2,7 @@ package main
 
 import (
 	"MotadataPlugin/linux"
+	"MotadataPlugin/linux/util"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,13 +12,11 @@ func main() {
 
 	var response []byte
 
-	_ = response
-
-	input := make(map[string]any)
+	input := make(map[string]interface{})
 
 	defer func() {
 		if err := recover(); err != nil {
-			input["error"] = fmt.Sprintf("%v", err)
+			input[util.Message] = fmt.Sprintf("%v", err)
 		}
 
 		response, _ = json.Marshal(input)
@@ -25,13 +24,13 @@ func main() {
 		fmt.Println(string(response))
 	}()
 
-	fmt.Println(os.Args[1])
-
 	err := json.Unmarshal([]byte(os.Args[1]), &input)
 
 	if err != nil {
 
-		input["error"] = fmt.Sprintf("%v", err)
+		input[util.Input] = os.Args[1]
+
+		input[util.Message] = fmt.Sprintf("%v", err)
 
 		return
 	}
@@ -39,32 +38,31 @@ func main() {
 	switch fmt.Sprint(input["Operation"]) {
 
 	case "Discovery":
-		discoveryResponse, err := linux.Discovery(input["credentialProfile"].(map[string]any), input["discoveryProfile"].(map[string]any))
+		discoveryResponse, err := linux.Discovery(input["credentialProfile"].(map[string]interface{}), input["discoveryProfile"].(map[string]interface{}))
 
 		if err != nil {
 
-			input["error"] = fmt.Sprintf("%v", err)
+			input[util.Status] = util.Fail
+
+			input[util.Message] = fmt.Sprintf("%v", err)
 
 			return
 		}
 
-		input["result"] = discoveryResponse
+		input[util.Result] = discoveryResponse
 
 	case "Polling":
 		//response :=
-		collectResponse, err := linux.Collect(input["credentialProfile"].(map[string]any), input["discoveryProfile"].(map[string]any), input["matrices"].([]any))
+		collectResponse, err := linux.Collect(input["credentialProfile"].(map[string]interface{}), input["discoveryProfile"].(map[string]interface{}), input["matrices"].([]interface{}))
 
 		if err != nil {
-			input["error"] = fmt.Sprintf("%v", err)
+			input[util.Message] = fmt.Sprintf("%v", err)
 
 			return
 		}
 
-		input["result"] = collectResponse
+		input[util.Result] = collectResponse
 	}
-
-	//fmt.Println(fmt.Sprint(response["message"]))
-
 }
 
 /*

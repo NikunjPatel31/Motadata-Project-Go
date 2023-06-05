@@ -2,6 +2,7 @@ package linux
 
 import (
 	"MotadataPlugin/linux/cpu"
+	"MotadataPlugin/linux/disk"
 	"MotadataPlugin/linux/memory"
 	"MotadataPlugin/linux/process"
 	"MotadataPlugin/linux/system"
@@ -20,7 +21,7 @@ func Discovery(credentialProfile map[string]interface{}, discoveryProfile map[st
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprintf("%v", e))
 
-			response[util.Status] = "error"
+			response[util.Status] = util.Fail
 
 			response[util.Message] = fmt.Sprintf("%v", e)
 		}
@@ -29,7 +30,7 @@ func Discovery(credentialProfile map[string]interface{}, discoveryProfile map[st
 	connection, err := connect(credentialProfile, discoveryProfile)
 
 	if err != nil {
-		response[util.Status] = "error"
+		response[util.Status] = util.Fail
 
 		response[util.Message] = fmt.Sprintf("%v", err)
 
@@ -43,7 +44,7 @@ func Discovery(credentialProfile map[string]interface{}, discoveryProfile map[st
 
 			err = errors.New(fmt.Sprintf("%v", e))
 
-			response[util.Status] = "error"
+			response[util.Status] = util.Fail
 
 			response[util.Message] = fmt.Sprintf("%v", err)
 		}
@@ -53,7 +54,7 @@ func Discovery(credentialProfile map[string]interface{}, discoveryProfile map[st
 
 	if err != nil {
 
-		response[util.Status] = "error"
+		response[util.Status] = util.Fail
 
 		response[util.Message] = fmt.Sprintf("%v", err)
 
@@ -66,14 +67,14 @@ func Discovery(credentialProfile map[string]interface{}, discoveryProfile map[st
 
 	if err != nil {
 
-		response[util.Status] = "error"
+		response[util.Status] = util.Fail
 
 		response[util.Message] = fmt.Sprintf("%v", err)
 
 		return
 	}
 
-	response[util.Status] = "ok"
+	response[util.Status] = util.Success
 
 	response[util.Message] = "Connection established"
 
@@ -90,7 +91,7 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 			//err = e.(error)
 			err = errors.New(fmt.Sprintf("%v", e))
 
-			response[util.Status] = "error"
+			response[util.Status] = util.Fail
 
 			response[util.Message] = fmt.Sprintf("%v", e)
 		}
@@ -112,7 +113,7 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 	var wg sync.WaitGroup
 
-	wg.Add(4)
+	wg.Add(5)
 
 	// memory statistics
 	go func() {
@@ -279,6 +280,48 @@ func Collect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 
 	}()
 
+	// disk statistics
+	go func() {
+
+		defer func() {
+			if e := recover(); e != nil {
+				err = errors.New(fmt.Sprintf("%v", e))
+			}
+			wg.Done()
+		}()
+
+		connection, e := connect(credentialProfile, discoveryProfile)
+
+		if e != nil {
+
+			err = e
+
+			return
+		}
+
+		defer func() {
+			err = connection.Close()
+		}()
+
+		diskStat, e := disk.GetStat(connection) // shadow
+
+		if e != nil {
+
+			err = e
+
+			return
+		}
+
+		response[util.SystemDisk] = diskStat[util.SystemDisk]
+
+		/*for key, value := range memoryStat {
+
+			response[key] = value
+
+		}*/
+
+	}()
+
 	wg.Wait()
 
 	return
@@ -303,7 +346,7 @@ func connect(credentialProfile map[string]interface{}, discoveryProfile map[stri
 		Timeout: time.Second * 4,
 	}
 
-	ip := fmt.Sprint(discoveryProfile["ip"], ":", fmt.Sprint(discoveryProfile["port"]))
+	ip := fmt.Sprint(discoveryProfile["ip"], ":", discoveryProfile["port"])
 
 	connection, err = ssh.Dial("tcp", ip, config)
 

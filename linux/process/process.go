@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"strconv"
 	"strings"
 )
 
@@ -41,37 +42,38 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 		processInfo := make(map[string]interface{})
 
-		processInfo[util.SystemProcessPid] = process[0]
+		if pid, err := strconv.Atoi(process[0]); err == nil {
+
+			processInfo[util.SystemProcessPid] = pid
+
+		}
+
 		index++
-		processInfo[util.SystemProcessCPU] = process[1]
+
+		if processCPU, err := strconv.ParseFloat(strings.ReplaceAll(process[1], "%", ""), 64); err == nil {
+
+			processInfo[util.SystemProcessCPU] = processCPU
+
+		}
+
 		index++
-		processInfo[util.SystemProcessMemory] = process[2]
+
+		if processMem, err := strconv.ParseFloat(strings.ReplaceAll(process[2], "%", ""), 64); err == nil {
+
+			processInfo[util.SystemProcessMemory] = processMem
+
+		}
+
 		index++
+
 		processInfo[util.SystemProcessUser] = process[3]
+
 		index++
+
 		processInfo[util.SystemProcessCommand] = process[4]
 
 		processes = append(processes, processInfo)
 	}
-
-	//processSplit := strings.Split(strings.TrimSpace(strings.ReplaceAll(string(processStat), "\n", " ")), " ")
-
-	/*for index := 0; index < len(processSplit); index++ {
-
-		process := make(map[string]interface{})
-
-		process[util.SystemProcessPid] = processSplit[index]
-		index++
-		process[util.SystemProcessCPU] = processSplit[index]
-		index++
-		process[util.SystemProcessMemory] = processSplit[index]
-		index++
-		process[util.SystemProcessUser] = processSplit[index]
-		index++
-		process[util.SystemProcessCommand] = processSplit[index]
-
-		processes = append(processes, process)
-	}*/
 
 	response[util.SystemProcess] = processes
 

@@ -30,13 +30,17 @@ const SystemProcessUser = "system.process.user"
 
 const SystemProcessCommand = "system.process.command"
 
-const SystemCPUCore = "system.cpu.core"
+const cmd = "nproc --all && mpstat -P ALL | awk 'NR>3 {print $4 \" \" $7 \" \" $5 \" \" $14}'"
 
 const SystemCPUPercentage = "system.cpu.percentage"
+
+const SystemCPUCore = "system.cpu.core"
 
 const SystemCPUUserPercentage = "system.cpu.user.percentage"
 
 const SystemCPUIdlePercentage = "system.cpu.idle.percentage"
+
+const SystemDisk = "system.disk"
 
 const SystemCPU = "system.cpu"
 
@@ -61,3 +65,11 @@ const SystemBlockedProcesses = "system.blocked.processes"
 const NewLineSeparator = "\n"
 
 const SpaceSeparator = " "
+
+const Input = "input"
+
+const Result = "result"
+
+const Fail = "fail"
+
+const Success = "success"

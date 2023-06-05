@@ -5,7 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"strconv"
 	"strings"
+)
+
+const (
+	cmd = "nproc --all && mpstat -P ALL | awk 'NR>3 {print $4 \" \" $7 \" \" $5 \" \" $14}'"
+
+	SystemCPUPercentage = "system.cpu.percentage"
+
+	SystemCPUCore = "system.cpu.core"
+
+	SystemCPUUserPercentage = "system.cpu.user.percentage"
+
+	SystemCPUIdlePercentage = "system.cpu.idle.percentage"
 )
 
 func GetStat(connection *ssh.Client) (response map[string]interface{}, err error) {
@@ -24,7 +37,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 		return
 	}
 
-	cpuStat, err := session.Output("nproc --all && mpstat -P ALL | awk 'NR>3 {print $4 \" \" $7 \" \" $5 \" \" $14}'")
+	cpuStat, err := session.Output(cmd)
 
 	if err != nil {
 		return
@@ -32,33 +45,61 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 	cpuSplit := strings.Split(strings.TrimSpace(string(cpuStat)), util.NewLineSeparator)
 
-	response[util.SystemCPUCore] = cpuSplit[0]
+	response[SystemCPUCore] = cpuSplit[0]
 
-	var CPUs []map[string]string
+	var CPUs []map[string]interface{}
 
 	for index := 1; index < len(cpuSplit); index++ {
 
-		cpu := make(map[string]string)
+		cpu := make(map[string]interface{})
 
 		CPUCore := strings.Split(cpuSplit[index], util.SpaceSeparator)
 
 		if CPUCore[0] == "all" {
 
-			response[util.SystemCPUPercentage] = CPUCore[1]
+			if cpuPer, err := strconv.ParseFloat(CPUCore[1], 64); err == nil {
 
-			response[util.SystemCPUUserPercentage] = CPUCore[2]
+				response[SystemCPUPercentage] = cpuPer
 
-			response[util.SystemCPUIdlePercentage] = CPUCore[3]
+			}
+
+			if percentage, err := strconv.ParseFloat(CPUCore[2], 64); err == nil {
+
+				response[SystemCPUUserPercentage] = percentage
+
+			}
+
+			if cpuPer, err := strconv.ParseFloat(CPUCore[3], 64); err == nil {
+
+				response[SystemCPUIdlePercentage] = cpuPer
+
+			}
 
 		} else {
 
-			cpu[util.SystemCPUCore] = CPUCore[0]
+			if cpuNo, err := strconv.Atoi(CPUCore[0]); err == nil {
 
-			cpu[util.SystemCPUPercentage] = CPUCore[1]
+				cpu[SystemCPUCore] = cpuNo
 
-			cpu[util.SystemCPUUserPercentage] = CPUCore[2]
+			}
 
-			cpu[util.SystemCPUIdlePercentage] = CPUCore[3]
+			if percentage, err := strconv.ParseFloat(CPUCore[1], 64); err == nil {
+
+				cpu[SystemCPUPercentage] = percentage
+
+			}
+
+			if percentage, err := strconv.ParseFloat(CPUCore[2], 64); err == nil {
+
+				cpu[SystemCPUUserPercentage] = percentage
+
+			}
+
+			if percentage, err := strconv.ParseFloat(CPUCore[3], 64); err == nil {
+
+				cpu[SystemCPUIdlePercentage] = percentage
+
+			}
 
 			CPUs = append(CPUs, cpu)
 		}

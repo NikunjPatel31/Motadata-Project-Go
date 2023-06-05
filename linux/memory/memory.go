@@ -33,29 +33,49 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 	memorySplit := strings.Split(string(memoryStat), util.SpaceSeparator)
 
-	totalMemory, err := strconv.Atoi(memorySplit[0])
+	if totalMemory, err := strconv.Atoi(memorySplit[0]); err == nil {
 
-	if err != nil {
-		return
+		response[util.SystemMemoryInstalledBytes] = totalMemory / 8
+
 	}
 
-	response = make(map[string]any)
+	if totalBytes, err := strconv.Atoi(memorySplit[0]); err == nil {
 
-	response[util.SystemMemoryInstalledBytes] = totalMemory / 8
+		response[util.SystemMemoryTotalBytes] = totalBytes
 
-	response[util.SystemMemoryUsedBytes] = memorySplit[1]
+	}
 
-	response[util.SystemMemoryUsedPercentage] = memorySplit[2]
+	if usedBytes, err := strconv.Atoi(memorySplit[1]); err == nil {
 
-	response[util.SystemMemoryFreeBytes] = memorySplit[3]
+		response[util.SystemMemoryUsedBytes] = usedBytes
 
-	response[util.SystemMemoryFreePercentage] = memorySplit[4]
+	}
 
-	response[util.SystemMemoryAvailableBytes] = memorySplit[5]
+	if usedPer, err := strconv.ParseFloat(memorySplit[2], 64); err == nil {
+
+		response[util.SystemMemoryUsedPercentage] = usedPer
+
+	}
+
+	if freeBytes, err := strconv.Atoi(memorySplit[3]); err == nil {
+
+		response[util.SystemMemoryFreeBytes] = freeBytes
+
+	}
+
+	if freePer, err := strconv.ParseFloat(memorySplit[4], 64); err == nil {
+
+		response[util.SystemMemoryFreePercentage] = freePer
+
+	}
+
+	if availableBytes, err := strconv.Atoi(memorySplit[5]); err == nil {
+
+		response[util.SystemMemoryAvailableBytes] = availableBytes
+
+	}
 
 	response[util.SystemMemorySwapBytes] = strings.TrimSpace(memorySplit[6])
-
-	response[util.SystemMemoryTotalBytes] = memorySplit[0]
 
 	return
 }
