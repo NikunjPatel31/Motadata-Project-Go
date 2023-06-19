@@ -61,7 +61,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 		if readBytes, err = strconv.ParseFloat(diskInfo[1], 64); err == nil {
 
-			disk[SystemDiskReadBytesPerSec] = readBytes * 1000.0
+			disk[SystemDiskReadBytesPerSec] = readBytes * 1024.0
 
 		}
 
@@ -75,7 +75,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 		if writeBytes, err = strconv.ParseFloat(diskInfo[3], 64); err == nil {
 
-			disk[SystemDiskWriteBytesPerSec] = writeBytes * 1000.0
+			disk[SystemDiskWriteBytesPerSec] = writeBytes * 1024.0
 
 		}
 
@@ -85,7 +85,7 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 		}
 
-		disk[SystemDiskBytesPerSec] = (writeBytes + readBytes) * 1000.0
+		disk[SystemDiskBytesPerSec] = (writeBytes + readBytes) * 1024.0
 
 		allDisk = append(allDisk, disk)
 	}

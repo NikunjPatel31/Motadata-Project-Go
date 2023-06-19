@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err error) {
+func GetStat(connection *ssh.Client) (response map[string]interface{}, err error) {
 
 	defer func() {
 		if e := recover(); e != nil {
@@ -17,7 +17,7 @@ func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err err
 		}
 	}()
 
-	statistics = make(map[string]interface{})
+	response = make(map[string]interface{})
 
 	session, err := connection.NewSession()
 
@@ -35,37 +35,37 @@ func GetStat(connection *ssh.Client) (statistics map[string]interface{}, err err
 
 	row1 := strings.Split(systemSplit[0], util.SpaceSeparator)
 
-	statistics[util.SystemName] = row1[0]
+	response[util.SystemName] = row1[0]
 
-	statistics[util.SystemOSName] = row1[1]
+	response[util.SystemOSName] = row1[1]
 
 	if threads, err := strconv.Atoi(row1[2]); err == nil {
 
-		statistics[util.SystemThreads] = threads
+		response[util.SystemThreads] = threads
 
 	}
 
 	if contextSwitch, err := strconv.Atoi(row1[3]); err == nil {
 
-		statistics[util.SystemContextSwtiches] = contextSwitch
+		response[util.SystemContextSwtiches] = contextSwitch
 
 	}
 
 	if runningProcess, err := strconv.Atoi(row1[4]); err == nil {
 
-		statistics[util.SystemRunningProcesses] = runningProcess
+		response[util.SystemRunningProcesses] = runningProcess
 
 	}
 
 	if blockedProcess, err := strconv.Atoi(row1[5]); err == nil {
 
-		statistics[util.SystemBlockedProcesses] = blockedProcess
+		response[util.SystemBlockedProcesses] = blockedProcess
 
 	}
 
-	statistics[util.SystemUptime] = systemSplit[1]
+	response[util.SystemUptime] = systemSplit[1]
 
-	statistics[util.SystemOSVersion] = strings.TrimSpace(strings.Split(systemSplit[2], ":")[1])
+	response[util.SystemOSVersion] = strings.TrimSpace(strings.Split(systemSplit[2], ":")[1])
 
 	return
 }

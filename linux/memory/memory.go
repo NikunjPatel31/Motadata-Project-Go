@@ -75,7 +75,11 @@ func GetStat(connection *ssh.Client) (response map[string]interface{}, err error
 
 	}
 
-	response[util.SystemMemorySwapBytes] = strings.TrimSpace(memorySplit[6])
+	if swapBytes, err := strconv.Atoi(strings.TrimSpace(memorySplit[6])); err == nil {
+
+		response[util.SystemMemorySwapBytes] = swapBytes
+
+	}
 
 	return
 }

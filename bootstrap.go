@@ -28,8 +28,6 @@ func main() {
 
 	if err != nil {
 
-		input[Input] = os.Args[1]
-
 		input[Message] = fmt.Sprintf("%v", err)
 
 		return
@@ -56,7 +54,7 @@ func main() {
 		input[Result] = discoveryResponse
 
 	case "Polling":
-		//response :=
+
 		collectResponse, err := linux.Collect(input["credentialProfile"].(map[string]interface{}), input["discoveryProfile"].(map[string]interface{}), fmt.Sprintf("%v", input["metrics"]))
 
 		if err != nil {
@@ -65,40 +63,19 @@ func main() {
 
 			errorResult[Message] = fmt.Sprintf("%v", err)
 
-			input[Result] = errorResult
+			input[Error] = errorResult
 
 			return
 		}
 
-		fmt.Println("We are at the end of polling")
-
 		input[Result] = collectResponse
+
+	default:
+		var errorResult = make(map[string]string)
+
+		errorResult[Message] = "invalid operation"
+
+		input[Error] = errorResult
+
 	}
 }
-
-/*
-
-'{"Operation":"Discovery","credentialProfile":{"username":"nikunj",
-"password":"Rajv@123"},
-"discoveryProfile":{"ip":"10.20.40.197",
-"port":"1267"}}'
-*/
-
-/*
-
-'{
-	"Operation":"Collect",
-	"credentialProfile":
-		{
-			"username":"nikunj",
-			"password":"Rajv@123"
-		},
-	"discoveryProfile":
-		{
-			"ip":"10.20.40.197",
-			"port":"1267"
-		}
-	"matrices":["memory", "cpu"]
-}'
-
-*/
